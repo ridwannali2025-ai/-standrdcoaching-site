@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { initBotId } from 'botid/client/core';
 
 interface EmailCaptureProps {
   title?: string;
@@ -8,6 +9,7 @@ interface EmailCaptureProps {
 }
 
 const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xojqqabe';
+const BOTID_VERIFY_ENDPOINT = '/api/botid-verify';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const EmailCapture: React.FC<EmailCaptureProps> = ({ 
@@ -17,6 +19,7 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const botIdInitializedRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +34,35 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
     setErrorMessage('');
 
     try {
+      if (!botIdInitializedRef.current) {
+        initBotId({
+          protect: [
+            {
+              path: BOTID_VERIFY_ENDPOINT,
+              method: 'POST',
+            },
+          ],
+        });
+        botIdInitializedRef.current = true;
+      }
+
+      const botVerifyResponse = await fetch(BOTID_VERIFY_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const botVerifyData = await botVerifyResponse.json().catch(() => null);
+
+      if (!botVerifyResponse.ok || !botVerifyData?.ok) {
+        setErrorMessage('We could not verify your submission. Please try again.');
+        setStatus('error');
+        return;
+      }
+
       const response = await fetch(FORMSPREE_ENDPOINT, {
         method: 'POST',
         headers: {
