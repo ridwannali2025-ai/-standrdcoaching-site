@@ -8,7 +8,7 @@ const Header: React.FC = () => {
         <div className="flex items-center">
           <a href="/" className="text-xl font-bold tracking-tighter flex items-center gap-1">
             <span className="font-serif italic text-2xl">S</span>
-            <span className="mt-0.5">tandrdCoaching</span>
+            <span className="mt-0.5">tandrdCoach</span>
           </a>
         </div>
         <div className="flex items-center gap-12 text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">
