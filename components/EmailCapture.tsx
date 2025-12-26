@@ -7,7 +7,7 @@ interface EmailCaptureProps {
   subtitle?: string;
 }
 
-const FORMSPREE_ENDPOINT = 'PASTE_FORMSPREE_ENDPOINT_HERE';
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xojqqabe';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const EmailCapture: React.FC<EmailCaptureProps> = ({ 
