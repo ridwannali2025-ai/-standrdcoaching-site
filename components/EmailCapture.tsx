@@ -7,18 +7,48 @@ interface EmailCaptureProps {
   subtitle?: string;
 }
 
+const FORMSPREE_ENDPOINT = 'PASTE_FORMSPREE_ENDPOINT_HERE';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const EmailCapture: React.FC<EmailCaptureProps> = ({ 
   title = "Stop paying for access to information.", 
   subtitle = "The coaching advantage is no longer a scarce resource. Join the transition." 
 }) => {
   const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      setSubmitted(true);
+    if (status === 'loading') return;
+    if (!EMAIL_REGEX.test(email)) {
+      setErrorMessage('Please enter a valid email address.');
+      setStatus('error');
+      return;
+    }
+
+    setStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const response = await fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Request failed');
+      }
+
+      setStatus('success');
       setEmail('');
+    } catch (error) {
+      setErrorMessage('Something went wrong. Please try again.');
+      setStatus('error');
     }
   };
 
@@ -27,7 +57,7 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
       <h3 className="text-3xl md:text-4xl font-bold mb-4 text-center tracking-tight">{title}</h3>
       <p className="text-lg md:text-xl text-zinc-500 mb-10 md:mb-12 text-center max-w-xl mx-auto">{subtitle}</p>
       
-      {!submitted ? (
+      {status !== 'success' ? (
         <form onSubmit={handleSubmit} className="relative flex flex-col sm:block group max-w-2xl mx-auto">
           <input
             type="email"
@@ -39,10 +69,14 @@ const EmailCapture: React.FC<EmailCaptureProps> = ({
           />
           <button 
             type="submit"
+            disabled={status === 'loading'}
             className="mt-3 sm:mt-0 sm:absolute sm:right-3 sm:top-3 sm:bottom-3 px-8 py-4 sm:py-0 bg-black text-white rounded-2xl sm:rounded-full font-bold uppercase text-[10px] tracking-[0.2em] hover:bg-zinc-800 transition-colors w-full sm:w-auto"
           >
-            Join the waitlist
+            {status === 'loading' ? 'Submitting...' : 'Join the waitlist'}
           </button>
+          {status === 'error' && (
+            <p className="mt-3 text-sm text-red-600 text-center">{errorMessage}</p>
+          )}
         </form>
       ) : (
         <motion.div 
